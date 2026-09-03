@@ -275,9 +275,14 @@ def build_state(cfg):
             images.append({'group': n, 'tag': g['tag'], 'sha': g['sha'],
                            'size': meta.get('size', ''), 'built_at': built_at})
 
+    # 把「正在讀哪裡」也送給前端。這個看板曾經被留在驗證沙盒的路徑上,
+    # 畫面一切正常、只是資料是假的——那種錯不會自己叫,只能讓它顯示在臉上。
+    conf_abs = os.path.abspath(cfg['conf'])
     return {
         'now': datetime.now(timezone.utc).isoformat(timespec='seconds'),
         'live': True,
+        'conf': conf_abs,
+        'conf_default': os.path.dirname(conf_abs) == HERE,
         'engine': cfg['engine'],
         'registry': cfg['registry'],
         'image': cfg['image'],

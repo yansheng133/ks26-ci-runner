@@ -46,6 +46,15 @@ KS26_REGISTRY=docker.io/<帳號> ./ks26-selftest.sh   # 應得 13 PASS / 0 FAIL
 
 還在跑的建置進度上限停在 95%,不會提早顯示滿格。
 
+**看板會把自己正在讀的 `groups.conf` 路徑顯示在標題下方**,指到非預設路徑時右上角亮
+「非正式路徑」警示。這是被真實事故逼出來的:服務曾經被留在驗證沙盒的路徑上,
+畫面一切正常、沒有任何錯誤,只是投影出來的是一組叫 `demo1` 的假資料。
+這種錯不會自己叫,只能讓它顯示在臉上。
+
+正式路徑由 `board-paths.conf` 裝到
+`/etc/systemd/system/ks26-board.service.d/paths.conf`;`board-paths-demo.conf` 是驗證用的,
+**不要留在正式機上**。`systemctl cat ks26-board` 一眼就看得到目前讀的是哪裡。
+
 跑法兩種,見 [`ks26-buildvm/README.md`](ks26-buildvm/README.md#建置看板選用可投影)。
 
 ## 安全邊界

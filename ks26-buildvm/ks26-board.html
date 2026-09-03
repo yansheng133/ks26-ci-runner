@@ -171,8 +171,10 @@
     <div class="brand">
       <div class="lockup"><span class="mark"></span><h1>ks26 建置看板</h1></div>
       <div class="sub" id="sub">docker · docker.io/yansheng133/ks26-app</div>
+      <div class="sub" id="confpath"></div>
     </div>
     <div class="topright">
+      <span class="badge stale" id="pathwarn" hidden><span class="dot"></span>非正式路徑</span>
       <span class="badge snap" id="mode"><span class="dot"></span><span id="modetext">載入中</span></span>
       <span class="clock m" id="clock">--:--:--</span>
       <button class="tbtn" id="theme" type="button">主題</button>
@@ -325,6 +327,9 @@ function groupCard(g){
 
 function render(d){
   $("sub").textContent = (d.engine||"—") + " · " + (d.registry||"") + "/" + (d.image||"");
+  // 正在讀哪個 groups.conf——指錯地方時畫面會顯示假資料卻不報錯,所以把來源攤開來給大家看
+  $("confpath").textContent = d.conf ? ("conf: " + d.conf) : "";
+  $("pathwarn").hidden = !(d.conf && d.conf_default === false);
 
   const mode = $("mode"), mt = $("modetext");
   mode.className = "badge " + (d.live ? (d.watcher_running ? "live" : "stale") : "snap");

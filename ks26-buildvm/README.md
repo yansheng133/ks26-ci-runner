@@ -14,6 +14,7 @@
 | `ks26-selftest.sh` | 端到端自我測試。真的 build、真的 push，14 項 |
 | `ks26-groups-from-form.py` | Google Form 匯出的 CSV → `groups.conf` |
 | `groups.conf.example` | 設定檔格式範例 |
+| `ks26-board.service` / `board-paths.conf` | 看板的 systemd 服務與正式路徑 drop-in |
 | `ks26-board.py` / `ks26-board.html` | 建置看板。把 watcher 的狀態變成可投影的網頁,進度條讀 BuildKit 步驟 |
 
 ## 安裝
@@ -27,6 +28,62 @@ docker login -u <Docker Hub 帳號>     # 或 podman login。只用互動輸入�
 
 容器引擎 **docker 或 podman 都可以**，watcher 會自己偵測（`KS26_ENGINE` 可覆寫）。
 兩者唯一的差別是 `--pull` 的寫法，腳本裡處理掉了。
+
+## 建置看板（可投影）
+
+兩種跑法。
+
+**公開**——systemd 服務，`0.0.0.0:80`，現場所有人直接開網址：
+
+```bash
+sudo systemctl status ks26-board      # 已 enable，重開機會自己起來
+```
+
+`ks26-board.service` 以 **ec2-user** 執行，靠 `AmbientCapabilities=CAP_NET_BIND_SERVICE`
+綁 80，不是用 root 跑。要在 AWS security group 放行 TCP 80 才連得到。
+
+**私下**——不開對外埠，走 SSH tunnel：
+
+```bash
+./ks26-board.py                                               # 綁 127.0.0.1:8080
+ssh -i rancher.pem -L 8080:127.0.0.1:8080 ec2-user@<runner>   # 然後開 http://127.0.0.1:8080
+```
+
+### 看板讀哪一組狀態
+
+路徑**明寫**在 `/etc/systemd/system/ks26-board.service.d/paths.conf`：
+
+```bash
+sudo install -m 0644 board-paths.conf \
+     /etc/systemd/system/ks26-board.service.d/paths.conf     # 正式路徑
+sudo systemctl daemon-reload && sudo systemctl restart ks26-board
+systemctl cat ks26-board | grep Environment                  # 確認讀的是哪裡
+```
+
+`board-paths-demo.conf` 是驗證沙盒用的，**不要留在正式機上**。
+
+> **這個坑咬過一次。** 服務被留在驗證沙盒的路徑上，服務 `active`、頁面 200、API 正常回應——
+> 沒有任何一個檢查會失敗，但投影出來的是一組叫 `demo1` 的假資料，八組什麼都看不到。
+> 所以看板現在會把正在讀的 `groups.conf` 路徑印在標題下方，指到非預設路徑時右上角亮
+> 「非正式路徑」警示。**驗收不能只看 `systemctl is-active`，要看畫面上的 conf 路徑。**
+
+### 進度條為什麼是真的
+
+watcher 把 `docker build` 的輸出也導進 `watcher.log`，看板解析 BuildKit 的步驟行。
+三個不明顯的地方：
+
+1. `x/y` 是**每個 stage 各自**的編號。多階段會有 `builder 1..4/4` 與 `stage-1 1/1`，
+   總步數要各 stage 相加（=5）；取最大值的話一開始就會跳到 100%。
+2. `#8 [builder 4/4] RUN ...` 是該步**開始**時印的，完成標記是後面的 `#8 DONE` 或
+   `#8 CACHED`（CACHED 不會再印 DONE）。數開始行會讓建置一秒就顯示滿格。
+3. 「封裝推送中」要用 `#N exporting to image` 判斷；用「已知步驟都做完了」的話，
+   下一個 stage 還沒宣告時會誤報。
+
+還在跑的建置進度上限停在 95%，不會提早顯示滿格。
+
+公開版沒有任何驗證，`/api/state` 會露出各組 repo 網址、映像檔標籤，以及 `watcher.log`
+最後 14 行（建置失敗時那裡有完整 build 輸出）。權杖不會出現在 log 裡。
+狀態回應快取 1 秒——幾十個人同時看的話，不快取就是每秒數十次 `docker images`，會跟建置搶 CPU。
 
 ## 活動當天
 
