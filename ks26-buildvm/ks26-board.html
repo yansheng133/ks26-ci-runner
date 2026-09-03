@@ -1,0 +1,400 @@
+<title>ks26 建置看板</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=SUSE:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  /* SUSE brand palette — Jungle Green / SUSE Green / Mint / Waterhole / Persimmon / Fog */
+  :root{
+    --bg:#F4F7F4; --surface:#FFFFFF; --surface-2:#EDF2EE;
+    --ink:#0C322C; --ink-2:#3E5C52; --muted:#6E8B7F;
+    --line:#D8E3DC; --line-strong:#BACabf;
+    --accent:#0F7C4E; --fill:#30BA78; --mint:#90EBCD;
+    --warn:#B24A12; --fill-warn:#FE7C3F;
+    --info:#2453FF; --fill-info:#2453FF;
+    --track:#E2EAE4;
+    --sans:"SUSE","PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+    --mono:"IBM Plex Mono","SF Mono",ui-monospace,Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0C322C; --surface:#0F3D35; --surface-2:#12463C;
+      --ink:#EAF6F0; --ink-2:#B9D6C9; --muted:#7FA697;
+      --line:#1B4E44; --line-strong:#2A6357;
+      --accent:#30BA78; --fill:#30BA78; --mint:#90EBCD;
+      --warn:#FE7C3F; --fill-warn:#FE7C3F;
+      --info:#8FA4FF; --fill-info:#8FA4FF;
+      --track:#153F37;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0C322C; --surface:#0F3D35; --surface-2:#12463C;
+    --ink:#EAF6F0; --ink-2:#B9D6C9; --muted:#7FA697;
+    --line:#1B4E44; --line-strong:#2A6357;
+    --accent:#30BA78; --fill:#30BA78; --mint:#90EBCD;
+    --warn:#FE7C3F; --fill-warn:#FE7C3F;
+    --info:#8FA4FF; --fill-info:#8FA4FF;
+    --track:#153F37;
+  }
+
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);
+       font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1240px;margin:0 auto;padding:26px 22px 64px;
+        display:flex;flex-direction:column;gap:26px;}
+  h1,h2,h3{margin:0;text-wrap:balance;}
+  p{margin:0;}
+  button{font:inherit;color:inherit;}
+  :focus-visible{outline:2px solid var(--fill);outline-offset:2px;border-radius:3px;}
+  .m{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+
+  /* ── top bar ───────────────────────────────────────────── */
+  .top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;
+       gap:16px;border-bottom:2px solid var(--ink);padding-bottom:16px;}
+  .brand{display:flex;flex-direction:column;gap:5px;}
+  .lockup{display:flex;align-items:center;gap:11px;}
+  /* SUSE 品牌的稜形色塊，這裡當作 engine 指示燈 */
+  .mark{width:19px;height:19px;background:var(--fill);
+        clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);flex:none;}
+  .lockup h1{font-size:25px;font-weight:700;letter-spacing:-.01em;}
+  .brand .sub{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;
+              text-transform:uppercase;color:var(--muted);}
+  .topright{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .badge{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);
+         font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+         padding:5px 11px;border-radius:99px;border:1px solid var(--line-strong);
+         background:var(--surface);color:var(--ink-2);}
+  .badge.live{border-color:var(--fill);color:var(--accent);}
+  .dot{width:7px;height:7px;border-radius:99px;background:var(--fill);flex:none;}
+  .badge.snap .dot{background:var(--muted);}
+  .badge.stale{border-color:var(--fill-warn);color:var(--warn);}
+  .badge.stale .dot{background:var(--fill-warn);}
+  .clock{font-family:var(--mono);font-size:22px;font-weight:500;
+         font-variant-numeric:tabular-nums;letter-spacing:.01em;}
+  .tbtn{background:var(--surface);border:1px solid var(--line-strong);border-radius:99px;
+        padding:5px 12px;font-family:var(--mono);font-size:11px;letter-spacing:.09em;
+        text-transform:uppercase;cursor:pointer;color:var(--ink-2);}
+  .tbtn:hover{border-color:var(--fill);color:var(--accent);}
+
+  /* ── tally ─────────────────────────────────────────────── */
+  .tally{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);border-radius:5px;
+         background:var(--surface);overflow:hidden;}
+  .t{flex:1 1 130px;padding:13px 18px;display:flex;flex-direction:column;gap:2px;
+     border-right:1px solid var(--line);}
+  .t:last-child{border-right:none;}
+  .t .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;
+        text-transform:uppercase;color:var(--muted);}
+  .t .v{font-family:var(--mono);font-size:27px;font-weight:600;line-height:1.1;
+        font-variant-numeric:tabular-nums;}
+  .t .v.hot{color:var(--accent);}
+  .t .v.bad{color:var(--warn);}
+
+  /* ── group grid ────────────────────────────────────────── */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px;}
+  .g{background:var(--surface);border:1px solid var(--line);border-radius:5px;
+     padding:16px 18px 15px;display:flex;flex-direction:column;gap:11px;}
+  .g.is-building{border-color:var(--fill);}
+  .g.is-failed{border-color:var(--fill-warn);}
+  .ghead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+  .gname{font-size:18px;font-weight:600;letter-spacing:-.005em;}
+  .grepo{font-family:var(--mono);font-size:11.5px;color:var(--muted);
+         overflow-wrap:anywhere;line-height:1.4;}
+  .st{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+      padding:3px 9px;border-radius:99px;white-space:nowrap;flex:none;
+      border:1px solid currentColor;}
+  .st-building{color:var(--accent);}
+  .st-done{color:var(--accent);background:color-mix(in srgb,var(--fill) 14%,transparent);}
+  .st-failed,.st-blocked{color:var(--warn);}
+  .st-waiting,.st-skipped{color:var(--muted);}
+
+  /* progress: segmented by real Dockerfile steps when we know them */
+  .prog{display:flex;flex-direction:column;gap:6px;}
+  .segs{display:flex;gap:3px;height:9px;}
+  .seg{flex:1;background:var(--track);border-radius:2px;}
+  .seg.f{background:var(--fill);}
+  .seg.f.warn{background:var(--fill-warn);}
+  .seg.cur{background:var(--fill);
+           background-image:repeating-linear-gradient(115deg,
+             rgba(255,255,255,.55) 0 4px,transparent 4px 9px);}
+  .bar{height:9px;background:var(--track);border-radius:2px;overflow:hidden;}
+  .bar i{display:block;height:100%;background:var(--fill);border-radius:2px;
+         background-image:repeating-linear-gradient(115deg,
+           rgba(255,255,255,.5) 0 4px,transparent 4px 9px);}
+  .bar i.warn{background:var(--fill-warn);background-image:none;}
+  .bar i.plain{background-image:none;}
+  .pmeta{display:flex;justify-content:space-between;gap:12px;align-items:baseline;
+         font-family:var(--mono);font-size:11.5px;color:var(--muted);}
+  .pmeta .step{color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+               min-width:0;flex:1 1 auto;}
+  .pmeta .num{flex:none;white-space:nowrap;}
+
+  .tagline{background:var(--surface-2);border-radius:4px;padding:8px 11px;
+           font-family:var(--mono);font-size:12px;overflow-x:auto;white-space:nowrap;
+           color:var(--ink-2);}
+  .tagline b{color:var(--accent);font-weight:600;}
+  .note{font-size:12.5px;color:var(--muted);}
+  .note.bad{color:var(--warn);}
+
+  /* ── built images table ────────────────────────────────── */
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:5px;background:var(--surface);}
+  table{border-collapse:collapse;width:100%;font-size:13px;min-width:620px;}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+     color:var(--muted);font-weight:500;background:var(--surface-2);}
+  td.m{font-size:12px;overflow-wrap:anywhere;}
+  .empty{padding:22px 16px;color:var(--muted);font-size:13.5px;}
+
+  h2.sec{font-size:13px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+         color:var(--muted);font-family:var(--mono);}
+  section{display:flex;flex-direction:column;gap:11px;}
+
+  .logbox{background:var(--surface);border:1px solid var(--line);border-radius:5px;
+          padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.65;
+          color:var(--ink-2);max-height:210px;overflow:auto;
+          display:flex;flex-direction:column;gap:1px;}
+  .logbox div{white-space:pre-wrap;overflow-wrap:anywhere;}
+
+  footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:16px;
+         display:flex;flex-direction:column;gap:6px;}
+  footer code{font-family:var(--mono);font-size:11.5px;}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+  @media (max-width:640px){
+    .wrap{padding:20px 15px 48px;}
+    .grid{grid-template-columns:1fr;}
+    .clock{font-size:18px;}
+  }
+</style>
+
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">
+      <div class="lockup"><span class="mark"></span><h1>ks26 建置看板</h1></div>
+      <div class="sub" id="sub">docker · docker.io/yansheng133/ks26-app</div>
+    </div>
+    <div class="topright">
+      <span class="badge snap" id="mode"><span class="dot"></span><span id="modetext">載入中</span></span>
+      <span class="clock m" id="clock">--:--:--</span>
+      <button class="tbtn" id="theme" type="button">主題</button>
+    </div>
+  </div>
+
+  <div class="tally">
+    <div class="t"><span class="k">建置中</span><span class="v" id="n-building">0</span></div>
+    <div class="t"><span class="k">已完成</span><span class="v" id="n-done">0</span></div>
+    <div class="t"><span class="k">失敗／擋下</span><span class="v" id="n-failed">0</span></div>
+    <div class="t"><span class="k">等待新 commit</span><span class="v" id="n-waiting">0</span></div>
+    <div class="t"><span class="k">映像檔</span><span class="v" id="n-images">0</span></div>
+  </div>
+
+  <section>
+    <h2 class="sec">各組狀態</h2>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section>
+    <h2 class="sec">已建好的映像檔</h2>
+    <div class="scroll" id="imgwrap"></div>
+  </section>
+
+  <section>
+    <h2 class="sec">watcher 最近輸出</h2>
+    <div class="logbox" id="log"></div>
+  </section>
+
+  <footer>
+    <div id="foot-src">資料來源：<code>watcher.log</code> 的 BuildKit 步驟輸出 ＋ <code>state/&lt;組&gt;.tag</code>。進度條是真的 Dockerfile 步驟數，不是動畫。</div>
+    <div>建置期 <code>--network=none --pull=false</code>；看板只讀檔，不碰 watcher 的狀態。</div>
+  </footer>
+
+</div>
+
+<script>
+// 沒有即時資料時顯示的快照。伺服器版會被 /api/state 覆蓋。
+const SNAPSHOT = window.__KS26_SNAPSHOT__ || {
+  live:false, engine:"docker", registry:"docker.io/yansheng133", image:"ks26-app",
+  now:null, watcher_running:false, conf_found:false, groups:[], images:[], log:[]
+};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const LABEL = {building:"建置中", done:"完成", failed:"失敗", blocked:"擋下",
+               waiting:"等待新 commit", skipped:"只改 deploy", unknown:"讀不到 repo"};
+
+function fmtDur(s){
+  if (s==null) return "—";
+  s = Math.max(0, Math.round(s));
+  return s<60 ? s+"s" : Math.floor(s/60)+"m"+String(s%60).padStart(2,"0")+"s";
+}
+
+function progressEl(g){
+  const wrap = document.createElement("div");
+  wrap.className = "prog";
+  const failed = g.status==="failed" || g.status==="blocked";
+
+  // 知道 Dockerfile 步驟數就照步驟切段，看得出「第幾步 / 共幾步」
+  if (g.step_total && g.step_total > 0 && g.step_total <= 24){
+    const segs = document.createElement("div");
+    segs.className = "segs";
+    const done = g.status==="done" ? g.step_total : (g.step_index||0);
+    for (let i=0;i<g.step_total;i++){
+      const s = document.createElement("span");
+      s.className = "seg";
+      if (i < done) s.className += failed ? " f warn" : " f";
+      else if (i === done && g.status==="building") s.className += " cur";
+      segs.appendChild(s);
+    }
+    wrap.appendChild(segs);
+  } else {
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    const i = document.createElement("i");
+    const pct = Math.round((g.progress||0)*100);
+    i.style.width = pct + "%";
+    if (failed) i.className = "warn";
+    else if (g.status!=="building") i.className = "plain";
+    bar.appendChild(i);
+    wrap.appendChild(bar);
+  }
+
+  const meta = document.createElement("div");
+  meta.className = "pmeta";
+  const left = document.createElement("span");
+  left.className = "step";
+  if (g.status==="building")      left.textContent = g.step || "準備中";
+  else if (g.status==="done")     left.textContent = g.step_total ? (g.step_total+" 步完成") : "完成";
+  else if (failed)                left.textContent = g.message || "失敗";
+  else if (g.status==="skipped")  left.textContent = "只改 deploy/，沒有重建";
+  else                            left.textContent = "沒有新 commit";
+  const right = document.createElement("span");
+  right.className = "num";
+  if (g.status==="building"){
+    const pct = g.step_total ? Math.round((g.step_index/g.step_total)*100) : Math.round((g.progress||0)*100);
+    right.textContent = pct+"% · "+fmtDur(g.elapsed)+" / "+fmtDur(g.timeout);
+  } else if (g.elapsed!=null){
+    right.textContent = fmtDur(g.elapsed);
+  } else right.textContent = "";
+  meta.append(left, right);
+  wrap.appendChild(meta);
+  return wrap;
+}
+
+function groupCard(g){
+  const el = document.createElement("article");
+  el.className = "g" + (g.status==="building" ? " is-building"
+                      : (g.status==="failed"||g.status==="blocked") ? " is-failed" : "");
+
+  const head = document.createElement("div");
+  head.className = "ghead";
+  const nm = document.createElement("span");
+  nm.className = "gname"; nm.textContent = g.name;
+  const st = document.createElement("span");
+  st.className = "st st-" + g.status; st.textContent = LABEL[g.status] || g.status;
+  head.append(nm, st);
+  el.appendChild(head);
+
+  const repo = document.createElement("div");
+  repo.className = "grepo";
+  repo.textContent = (g.repo || "—") + (g.branch ? " · " + g.branch : "");
+  el.appendChild(repo);
+
+  el.appendChild(progressEl(g));
+
+  if (g.tag){
+    const t = document.createElement("div");
+    t.className = "tagline";
+    const parts = String(g.tag).split(":");
+    const sha = parts.pop();
+    t.innerHTML = esc(parts.join(":")) + ":<b>" + esc(sha) + "</b>";
+    el.appendChild(t);
+  } else if (g.status!=="building"){
+    const n = document.createElement("div");
+    n.className = "note";
+    n.textContent = "還沒有映像檔";
+    el.appendChild(n);
+  }
+
+  if (g.message && (g.status==="failed" || g.status==="blocked")){
+    const n = document.createElement("div");
+    n.className = "note bad"; n.textContent = g.message;
+    el.appendChild(n);
+  }
+  return el;
+}
+
+function render(d){
+  $("sub").textContent = (d.engine||"—") + " · " + (d.registry||"") + "/" + (d.image||"");
+
+  const mode = $("mode"), mt = $("modetext");
+  mode.className = "badge " + (d.live ? (d.watcher_running ? "live" : "stale") : "snap");
+  mt.textContent = d.live ? (d.watcher_running ? "即時 · watcher 運轉中" : "即時 · watcher 未啟動")
+                          : "快照 · 非即時";
+
+  const gs = d.groups || [];
+  const c = s => gs.filter(g => g.status===s).length;
+  const nb = c("building"), nf = c("failed") + c("blocked");
+  $("n-building").textContent = nb;
+  $("n-building").className   = "v" + (nb ? " hot" : "");
+  $("n-done").textContent     = c("done") + c("skipped");
+  $("n-failed").textContent   = nf;
+  $("n-failed").className     = "v" + (nf ? " bad" : "");
+  $("n-waiting").textContent  = c("waiting") + c("unknown");
+  $("n-images").textContent   = (d.images||[]).length;
+
+  const grid = $("grid");
+  grid.textContent = "";
+  if (!gs.length){
+    const e = document.createElement("div");
+    e.className = "empty";
+    e.textContent = d.conf_found ? "groups.conf 裡沒有任何組別。"
+      : "還沒有 groups.conf —— 當天用 ks26-groups-from-form.py 從表單 CSV 產出後，這裡就會出現八組。";
+    grid.appendChild(e);
+  } else gs.forEach(g => grid.appendChild(groupCard(g)));
+
+  const iw = $("imgwrap");
+  iw.textContent = "";
+  const imgs = d.images || [];
+  if (!imgs.length){
+    const e = document.createElement("div"); e.className = "empty";
+    e.textContent = "還沒有建好的映像檔。";
+    iw.appendChild(e);
+  } else {
+    const tb = imgs.map(i => "<tr><td>"+esc(i.group)+"</td><td class='m'>"+esc(i.tag)+
+      "</td><td class='m'>"+esc(i.sha||"")+"</td><td class='m'>"+esc(i.size||"")+
+      "</td><td class='m'>"+esc(i.built_at||"")+"</td></tr>").join("");
+    iw.innerHTML = "<table><thead><tr><th>組別</th><th>tag</th><th>commit</th><th>大小</th><th>建好時間</th></tr></thead><tbody>"+tb+"</tbody></table>";
+  }
+
+  const lb = $("log");
+  lb.textContent = "";
+  (d.log||[]).forEach(line => { const x=document.createElement("div"); x.textContent=line; lb.appendChild(x); });
+  lb.scrollTop = lb.scrollHeight;
+}
+
+function tick(){
+  const t = new Date();
+  $("clock").textContent = String(t.getHours()).padStart(2,"0")+":"+
+    String(t.getMinutes()).padStart(2,"0")+":"+String(t.getSeconds()).padStart(2,"0");
+}
+
+async function poll(){
+  try{
+    const r = await fetch("/api/state", {cache:"no-store"});
+    if (r.ok) render(await r.json());
+  }catch(e){ /* 快照模式：維持已渲染的內容 */ }
+}
+
+// 主題切換：投影時常常需要臨場換,別逼講者去改系統設定
+const root = document.documentElement;
+$("theme").addEventListener("click", () => {
+  const cur = root.getAttribute("data-theme");
+  const dark = cur ? cur==="dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.setAttribute("data-theme", dark ? "light" : "dark");
+});
+
+render(SNAPSHOT);
+tick(); setInterval(tick, 1000);
+poll(); setInterval(poll, 2000);
+</script>

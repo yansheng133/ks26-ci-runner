@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ks26-app
+data:
+  APP_OWNER: "TODO-填你的團隊"
+  PORT: "8080"

@@ -1,0 +1,14 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ks26-app
+spec:
+  rules:
+    # RANCHER_IP 為範例；換成現場下游 RKE2 的 IP。純 HTTP，不上憑證。
+    - host: group1.RANCHER_IP.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: {name: ks26-app, port: {number: 80}}

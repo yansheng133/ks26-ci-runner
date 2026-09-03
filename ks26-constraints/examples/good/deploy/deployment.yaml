@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ks26-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: ks26-app}
+  template:
+    metadata:
+      labels: {app: ks26-app}
+    spec:
+      containers:
+        - name: app
+          # CI runner 建置後印出的那一行，貼進這裡、commit —— 這一步就是 GitOps 那堂課
+          image: docker.io/yansheng133/ks26-app:group1-REPLACE_SHA
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              valueFrom: {configMapKeyRef: {name: ks26-app, key: PORT}}
+            - name: APP_OWNER
+              valueFrom: {configMapKeyRef: {name: ks26-app, key: APP_OWNER}}
+            - name: IMAGE_TAG
+              value: "group1-REPLACE_SHA"     # 與 image 標籤一致，首頁顯示用
+          resources:
+            requests: {cpu: 50m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          securityContext:
+            privileged: false
+            runAsNonRoot: true
+            runAsUser: 65532
+            allowPrivilegeEscalation: false
+          livenessProbe:  {httpGet: {path: /healthz, port: 8080}}
+          readinessProbe: {httpGet: {path: /healthz, port: 8080}}

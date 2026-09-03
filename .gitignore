@@ -1,0 +1,14 @@
+# 白名單寫法：預設忽略這個目錄下的所有東西,只放行下面明列的。
+# 這裡同時放著 rancher.pem 與含真實 IP 的安裝紀錄,不能用黑名單。
+/*
+!/.gitignore
+!/README.md
+!/ks26-buildvm/
+!/ks26-constraints/
+
+# 執行期產物,不進版本控制
+ks26-buildvm/state/
+ks26-buildvm/work/
+ks26-buildvm/watcher.log
+ks26-buildvm/groups.conf
+ks26-buildvm/board.env

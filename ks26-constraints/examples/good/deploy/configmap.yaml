@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ks26-app
+data:
+  APP_OWNER: "group1 / 平台工程組"      # 放行前必須填實名
+  PORT: "8080"
