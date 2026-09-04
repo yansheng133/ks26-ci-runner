@@ -60,9 +60,9 @@ sudo systemctl daemon-reload && sudo systemctl restart ks26-board
 systemctl cat ks26-board | grep Environment                  # 確認讀的是哪裡
 ```
 
-`board-paths-demo.conf` 是驗證沙盒用的，**不要留在正式機上**。
+`board-paths-demo.conf` 是驗證沙箱用的，**不要留在正式機上**。
 
-> **這個坑咬過一次。** 服務被留在驗證沙盒的路徑上，服務 `active`、頁面 200、API 正常回應——
+> **這個坑咬過一次。** 服務被留在驗證沙箱的路徑上，服務 `active`、頁面 200、API 正常回應——
 > 沒有任何一個檢查會失敗，但投影出來的是一組叫 `demo1` 的假資料，八組什麼都看不到。
 > 所以看板現在會把正在讀的 `groups.conf` 路徑印在標題下方，指到非預設路徑時右上角亮
 > 「非正式路徑」警示。**驗收不能只看 `systemctl is-active`，要看畫面上的 conf 路徑。**

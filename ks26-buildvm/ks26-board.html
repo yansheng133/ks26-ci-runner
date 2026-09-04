@@ -51,7 +51,7 @@
        gap:16px;border-bottom:2px solid var(--ink);padding-bottom:16px;}
   .brand{display:flex;flex-direction:column;gap:5px;}
   .lockup{display:flex;align-items:center;gap:11px;}
-  /* SUSE 品牌的稜形色塊，這裡當作 engine 指示燈 */
+  /* SUSE 品牌的菱形色塊，這裡當作 engine 指示燈 */
   .mark{width:19px;height:19px;background:var(--fill);
         clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);flex:none;}
   .lockup h1{font-size:25px;font-weight:700;letter-spacing:-.01em;}
@@ -327,7 +327,7 @@ function groupCard(g){
 
 function render(d){
   $("sub").textContent = (d.engine||"—") + " · " + (d.registry||"") + "/" + (d.image||"");
-  // 正在讀哪個 groups.conf——指錯地方時畫面會顯示假資料卻不報錯,所以把來源攤開來給大家看
+  // 正在讀哪個 groups.conf——指錯地方時畫面會顯示假資料卻不會噴錯,所以把來源攤開來給大家看
   $("confpath").textContent = d.conf ? ("conf: " + d.conf) : "";
   $("pathwarn").hidden = !(d.conf && d.conf_default === false);
 

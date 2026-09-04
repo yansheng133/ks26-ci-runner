@@ -11,7 +11,7 @@ WorkingDirectory=/home/ec2-user/ks26/ks26-buildvm
 # 看板要讀哪一組狀態,由 drop-in 決定:
 #   /etc/systemd/system/ks26-board.service.d/paths.conf
 # 沒有 drop-in 時用腳本預設(ks26-buildvm/ 底下的 groups.conf、state、watcher.log)。
-# 註:EnvironmentFile 指到 /home 底下在這台 SLES 16 上不生效(systemd 收得到指令但變數沒進程序),所以改用 drop-in。
+# 註:EnvironmentFile 指到 /home 底下在這台 SLES 16 上不生效(systemd 收得到指令但變數沒進行程),所以改用 drop-in。
 # 80 是特權埠。給這一個能力就好,不要用 root 跑。
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
