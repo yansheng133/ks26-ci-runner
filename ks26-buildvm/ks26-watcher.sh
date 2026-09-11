@@ -2,6 +2,7 @@
 # ks26 建置 watcher —— 跑在專用的建置 VM 上，不在講師筆電上
 #
 # 它做什麼：輪詢各組 fork 的指定分支（預設 main），發現新 commit 就建置映像檔並推上 registry。
+#           某一組在 groups.conf 裡換了 repo 或分支時，自動歸檔舊狀態並重新建置。
 # 它不做什麼：**永遠不執行學員 repo 裡的任何腳本**。建置指令是固定的，寫在這支腳本裡。
 #
 # 用法：
@@ -83,6 +84,36 @@ guard() {
 
 remote_sha() { $GIT ls-remote "$1" "refs/heads/$2" 2>/dev/null | awk '{print $1}' | head -1; }
 
+# ── 換 repo 的偵測 ────────────────────────────────────────────────────────
+# state 是用組號當鍵的，本身不記得那份狀態是哪個 repo 留下的。學員中途改用
+# 另一個 GitHub 帳號重新 fork 時（活動當天真的發生過），舊狀態會被拿去比對新
+# repo，而且兩條路都是靜默失敗：
+#   1. .sha 相同 → 判定「沒有新 commit」，這一組整場不建置
+#      （八組 fork 自同一個上游，沒動過的 fork 都停在同一個 commit，很容易撞上）
+#   2. .src 相同 → 「略過，不重建」，標籤還留在前一個 repo 建出來的映像檔上
+# 所以把 repo 身分也存進 state，不一樣就把舊狀態歸檔、重新建。
+
+# 比對用的鍵。GitHub 的擁有者與 repo 名不分大小寫，結尾的 .git 與 / 也等價，
+# 這些差異不該被當成換了 repo（當天就有一組把帳號填成大寫）。
+# 只用來比對——存進 state 與印給人看的一律是原字串，不然報告裡會出現被改過的網址。
+repo_key() {
+  printf '%s %s' "$(printf '%s' "$1" | tr 'A-Z' 'a-z' | sed -E 's#/+$##; s#\.git$##')" "$2"
+}
+
+# 歸檔而不是刪除：出事時要能回頭看這一組原本建到哪裡。
+reset_group_state() {
+  local g="$1" old="$2" new="$3" ext
+  local arc="$STATE/changed/$g-$(date '+%Y%m%d-%H%M%S')"
+  mkdir -p "$arc"
+  for ext in sha src tag repo; do
+    [ -f "$STATE/$g.$ext" ] && mv "$STATE/$g.$ext" "$arc/$g.$ext"
+  done
+  say "  ${YEL}換 repo${RST} $g —— 舊狀態已歸檔，這一組會重新建置"
+  say "        ${DIM}舊：$old${RST}"
+  say "        ${DIM}新：$new${RST}"
+  log "    歸檔位置：$arc"
+}
+
 build_group() {
   local g="$1" url="$2" br="$3" sha="$4"
   local short="${sha:0:7}"
@@ -151,6 +182,26 @@ sweep() {
   while read -r g url br; do
     case "$g" in ''|\#*) continue;; esac
     br="${br:-main}"
+
+    # 這一組的 repo／分支跟上次看到的不一樣就重來。
+    # --check 說好只巡不改，所以它只報告、不動 state。
+    local oldline="" ourl="" obr=""
+    [ -f "$STATE/$g.repo" ] && oldline=$(cat "$STATE/$g.repo")
+    if [ -n "$oldline" ]; then
+      read -r ourl obr <<< "$oldline"
+      if [ "$(repo_key "$ourl" "$obr")" != "$(repo_key "$url" "$br")" ]; then
+        if [ "$MODE" = "check" ]; then
+          say "  ${YEL}換 repo${RST} $g —— 換了 repo 或分支，正式跑時會重建（--check 不改狀態）"
+          say "        ${DIM}舊：$oldline${RST}"
+          say "        ${DIM}新：$url $br${RST}"
+        else
+          reset_group_state "$g" "$oldline" "$url $br"
+        fi
+      fi
+    fi
+    # 舊版升上來時 .repo 還不存在：當成沒換過，只補記，不觸發整批重建。
+    [ "$MODE" = "check" ] || printf '%s %s\n' "$url" "$br" > "$STATE/$g.repo"
+
     local sha; sha=$(remote_sha "$url" "$br")
     if [ -z "$sha" ]; then say "  ${YEL}?${RST}    $g 讀不到遠端分支 $br"; continue; fi
     local last=""; [ -f "$STATE/$g.sha" ] && last=$(cat "$STATE/$g.sha")
