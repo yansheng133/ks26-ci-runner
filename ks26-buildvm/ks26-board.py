@@ -355,7 +355,7 @@ def main():
 
     Handler.cfg = {
         'conf': a.conf, 'state': a.state, 'log': a.log,
-        'registry': os.environ.get('KS26_REGISTRY', 'docker.io/yansheng133'),
+        'registry': os.environ.get('KS26_REGISTRY', 'docker.io/DOCKERHUB_ACCOUNT'),
         'image': os.environ.get('KS26_IMAGE', 'ks26-app'),
         'timeout': int(os.environ.get('KS26_BUILD_TIMEOUT', 180)),
         'engine': detect_engine(),

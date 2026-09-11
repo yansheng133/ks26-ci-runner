@@ -143,7 +143,7 @@ awk '$1 ~ /^group/ {print $2, ($3==""?"main":$3) > ("state/" $1 ".repo")}' group
 
 | 變數 | 預設 | |
 |---|---|---|
-| `KS26_REGISTRY` | `docker.io/yansheng133` | 推去哪 |
+| `KS26_REGISTRY` | `docker.io/DOCKERHUB_ACCOUNT` | 推去哪 |
 | `KS26_IMAGE` | `ks26-app` | 映像檔名 |
 | `KS26_ENGINE` | 自動偵測 | `docker` 或 `podman` |
 | `KS26_INTERVAL` | `20` | 輪詢秒數 |

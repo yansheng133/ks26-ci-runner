@@ -59,7 +59,7 @@ cat <<EOF
 下一步（用 $RUNAS 身分，不要用 root）：
 
   1. 登入 registry —— 只用互動輸入，不要用 -p，權杖不要出現在指令列
-       $ENGINE login --username yansheng133
+       $ENGINE login --username DOCKERHUB_ACCOUNT
 
   2. 端到端自我測試（會真的 build 並推一次）
        cd "$HERE" && ./ks26-selftest.sh

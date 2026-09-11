@@ -13,7 +13,7 @@ spec:
       containers:
         - name: app
           # CI runner 建置後印出的那一行，貼進這裡、commit —— 這一步就是 GitOps 那堂課
-          image: docker.io/yansheng133/ks26-app:group1-REPLACE_SHA
+          image: docker.io/DOCKERHUB_ACCOUNT/ks26-app:group1-REPLACE_SHA
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

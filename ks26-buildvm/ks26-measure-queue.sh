@@ -28,7 +28,7 @@ for a in "$@"; do
   esac
 done
 
-REPO="${KS26_MEASURE_REPO:-https://github.com/yansheng133/ks26-app}"
+REPO="${KS26_MEASURE_REPO:-https://github.com/GITHUB_ACCOUNT/ks26-app}"
 BRANCH="${KS26_MEASURE_BRANCH:-ai-output}"
 CONF="./groups.conf"; STATE="./state"; WORK="./work"; LOG="./watcher.log"
 BK=".measure-backup"

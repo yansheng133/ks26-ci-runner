@@ -15,7 +15,7 @@ CONF="${KS26_CONF:-./groups.conf}"
 STATE="${KS26_STATE:-./state}"
 WORK="${KS26_WORK:-./work}"
 LOG="${KS26_LOG:-./watcher.log}"
-REGISTRY="${KS26_REGISTRY:-docker.io/yansheng133}"
+REGISTRY="${KS26_REGISTRY:-docker.io/DOCKERHUB_ACCOUNT}"
 IMAGE="${KS26_IMAGE:-ks26-app}"
 INTERVAL="${KS26_INTERVAL:-20}"
 BUILD_TIMEOUT="${KS26_BUILD_TIMEOUT:-180}"
@@ -49,6 +49,18 @@ case "$ENGINE" in
   *)      PULL_FLAG="--pull=false" ;;
 esac
 [ -f "$CONF" ] || { echo "找不到設定檔 $CONF —— 一行一組：group1 <repo網址> <分支>"; exit 2; }
+
+# registry 還停在佔位字串就別開跑。建置要一分鐘，等到推送才失敗的話那一分鐘是白花的，
+# 而且錯誤會出現在 log 深處而不是開跑的第一行。--check 不推送，所以只提醒不擋。
+case "$REGISTRY" in
+  *DOCKERHUB_ACCOUNT*)
+    echo "registry 還是佔位字串：$REGISTRY"
+    echo "  改法二選一：./ks26-set-registry.sh <你的 Docker Hub 帳號>"
+    echo "            或 export KS26_REGISTRY=docker.io/<你的帳號>"
+    [ "$MODE" = "check" ] || exit 2
+    ;;
+esac
+
 mkdir -p "$STATE" "$WORK"
 
 # git 一律關閉 hooks 與外部設定，避免 clone 過程被塞東西
