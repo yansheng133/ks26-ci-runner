@@ -5,6 +5,7 @@
 set -uo pipefail
 
 ROOT="${1:-.}"
+[ -d "$ROOT" ] || { echo "找不到目錄：$ROOT"; exit 2; }
 PASS=0; FAIL=0
 RED=$'\033[31m'; GRN=$'\033[32m'; DIM=$'\033[2m'; RST=$'\033[0m'
 [ -t 1 ] || { RED=; GRN=; DIM=; RST=; }
@@ -13,7 +14,9 @@ RED=$'\033[31m'; GRN=$'\033[32m'; DIM=$'\033[2m'; RST=$'\033[0m'
 if ! command -v yq >/dev/null 2>&1; then
   for RT in docker podman nerdctl; do
     if command -v "$RT" >/dev/null 2>&1; then
-      yq() { "$RT" run --rm -i -v "$PWD:/w" -w /w docker.io/mikefarah/yq:4 "$@"; }
+      # :z 讓容器引擎重貼 SELinux 標籤。少了它，在 Enforcing 的機器上
+      # （SUSE／RHEL／Fedora 預設就是）容器讀不到掛進去的檔案。
+      yq() { "$RT" run --rm -i -v "$PWD:/w:z" -w /w docker.io/mikefarah/yq:4 "$@"; }
       echo "${DIM}yq 不在本機，改用 $RT 執行容器版${RST}"
       break
     fi
@@ -22,9 +25,28 @@ fi
 command -v yq >/dev/null 2>&1 || declare -F yq >/dev/null || {
   echo "找不到 yq，也找不到容器工具。請擇一安裝後重跑。"; exit 2; }
 
-# 冒煙測試：容器 daemon 沒起來時，yq 會安靜地回空字串，導致整份報告是假的
-if ! printf 'a: 1\n' | yq -r '.a' - 2>/dev/null | grep -q '^1$'; then
-  echo "yq 叫得到但讀不出東西（容器 daemon 沒起來？）。先修好再驗，否則這份報告是假的。"
+# 冒煙測試：yq 讀不到東西時會安靜地回空字串，整份報告就變成假的。
+#
+# 這裡刻意去讀一個**放在受測目錄裡的真實檔案**，不是用 stdin。
+# 用 stdin 測過一次，結果是：stdin 不需要掛載，所以容器版明明讀不到任何檔案，
+# 冒煙測試照樣會過——防線形同虛設。實測過的三種情形：
+#     stdin                  → 過（即使檔案全讀不到）
+#     檔案，掛載沒加 :z      → permission denied（SELinux）
+#     檔案，掛載加了 :z      → 正常
+# 讀檔案才同時驗到「引擎活著」「掛載有效」「受測目錄在掛載範圍內」三件事。
+SMOKE="$ROOT/.ks26-yq-smoke.$$.yaml"
+if ! printf 'a: 1\n' > "$SMOKE" 2>/dev/null; then
+  echo "寫不進 $ROOT —— 自我檢查需要在受測目錄裡放一個暫存檔。"; exit 2
+fi
+SMOKE_OK=0
+yq -r '.a' "$SMOKE" 2>/dev/null | grep -q '^1$' && SMOKE_OK=1
+rm -f "$SMOKE"
+if [ "$SMOKE_OK" -ne 1 ]; then
+  echo "yq 叫得到但讀不到檔案。先修好再驗，否則這份報告是假的。三個常見原因："
+  echo "  1. 容器 daemon 沒起來"
+  echo "  2. SELinux 擋掉掛載（本腳本已加 :z；仍失敗就看 sudo ausearch -m avc -ts recent）"
+  echo "  3. 受測目錄不在掛載範圍內 —— 容器版只掛得到當前目錄，"
+  echo "     請 cd 到受測目錄的上層再跑，或改用相對路徑"
   exit 2
 fi
 
